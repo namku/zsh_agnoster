@@ -110,7 +110,8 @@ prompt_git() {
     dirty=$(parse_git_dirty)
     ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git rev-parse --short HEAD 2> /dev/null)"
     if [[ -n $dirty ]]; then
-      prompt_segment yellow black
+    #  prompt_segment yellow black
+      prompt_segment white $CURRENT_FG
     else
       prompt_segment white $CURRENT_FG
     fi
@@ -126,11 +127,20 @@ prompt_git() {
     setopt promptsubst
     autoload -Uz vcs_info
 
+    turquoise="%F{81}"
+    orange="%F{166}"
+    purple="%F{135}"
+    hotpink="%F{161}"
+    limegreen="%F{118}"
+
+    FMT_UNSTAGED="%{$orange%}●"
+
     zstyle ':vcs_info:*' enable git
     zstyle ':vcs_info:*' get-revision true
     zstyle ':vcs_info:*' check-for-changes true
     zstyle ':vcs_info:*' stagedstr '✚'
-    zstyle ':vcs_info:*' unstagedstr '●'
+    #zstyle ':vcs_info:*' unstagedstr '●'
+    zstyle ':vcs_info:*' unstagedstr "${FMT_UNSTAGED}"
     zstyle ':vcs_info:*' formats ' %u%c'
     zstyle ':vcs_info:*' actionformats ' %u%c'
     vcs_info

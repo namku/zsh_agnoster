@@ -84,17 +84,6 @@ prompt_end() {
   CURRENT_BG=''
 }
 
-# End the prompt, closing any open segments
-r_prompt_start() {
-  if [[ -n $CURRENT_BG ]]; then
-    echo -n " %{%k%F{$CURRENT_BG}%}$R_SEGMENT_SEPARATOR_END"
-  else
-    echo -n "%{%k%}"
-  fi
-  echo -n "%{%f%}"
-  CURRENT_BG=''
-}
-
 r_prompt_segment() {
   local bg fg
   [[ -n $1 ]] && bg="%K{$1}" || bg="%k"

@@ -53,6 +53,8 @@ esac
   # escape sequence with a single literal character.
   # Do not change this! Do not make it '\u2b80'; that is the old, wrong code point.
   SEGMENT_SEPARATOR=$'\ue0b0'
+  R_SEGMENT_SEPARATOR=$'\ue0b6'
+  R_SEGMENT_SEPARATOR_END=$'\ue0b4'
 }
 
 # Begin a segment
@@ -75,6 +77,41 @@ prompt_segment() {
 prompt_end() {
   if [[ -n $CURRENT_BG ]]; then
     echo -n " %{%k%F{$CURRENT_BG}%}$SEGMENT_SEPARATOR"
+  else
+    echo -n "%{%k%}"
+  fi
+  echo -n "%{%f%}"
+  CURRENT_BG=''
+}
+
+# End the prompt, closing any open segments
+r_prompt_start() {
+  if [[ -n $CURRENT_BG ]]; then
+    echo -n " %{%k%F{$CURRENT_BG}%}$R_SEGMENT_SEPARATOR_END"
+  else
+    echo -n "%{%k%}"
+  fi
+  echo -n "%{%f%}"
+  CURRENT_BG=''
+}
+
+r_prompt_segment() {
+  local bg fg
+  [[ -n $1 ]] && bg="%K{$1}" || bg="%k"
+  [[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+  if [[ $CURRENT_BG != 'NONE' && $1 != $CURRENT_BG ]]; then
+    echo -n " %{$bg%F{$CURRENT_BG}%}$R_SEGMENT_SEPARATOR%{$fg%} "
+  else
+    echo -n " %{%k%F{white}%}$R_SEGMENT_SEPARATOR%{$bg%F$fg%} "
+  fi
+  CURRENT_BG=$1
+  [[ -n $3 ]] && echo -n $3
+}
+
+# End the prompt, closing any open segments
+r_prompt_end() {
+  if [[ -n $CURRENT_BG ]]; then
+    echo -n " %{%k%F{$CURRENT_BG}%}$R_SEGMENT_SEPARATOR_END"
   else
     echo -n "%{%k%}"
   fi
@@ -239,6 +276,18 @@ prompt_time() {
   prompt_segment white black ' %* '
 }
 
+# Display cluster name
+prompt_kubecontext() {
+  if [[ $(kubectl config current-context) == *"-dev"* ]]; then
+        #r_prompt_segment white black "`echo -n \"\xF0\x9F\x90\xB3\"` (`kubectl config current-context | awk -F/ '{print $2}'`)"
+        r_prompt_segment white black "(`kubectl config current-context | awk -F/ '{print $2}'`)"
+  elif [[ $(kubectl config current-context) == *"-stg"* ]]; then
+        r_prompt_segment yellow black "(`kubectl config current-context | awk -F/ '{print $2}'`)"
+  elif [[ $(kubectl config current-context) == *"-prod"* ]]; then
+        r_prompt_segment red yellow "(`kubectl config current-context | awk -F/ '{print $2}'`)"
+  fi
+}
+
 ## Main prompt
 build_prompt() {
   RETVAL=$?
@@ -253,4 +302,10 @@ build_prompt() {
   prompt_end
 }
 
+build_right_prompt() {
+  prompt_kubecontext
+  r_prompt_end
+}
+
 PROMPT='%{%f%b%k%}$(build_prompt) '
+RPROMPT='%{%f%b%k%}$(build_right_prompt)'
